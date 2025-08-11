@@ -20,8 +20,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: node
-          # >>> replace with your ECR image + pinned tag (NOT :latest) <<<
-          image: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/node-hello:<TAG>
+          image: 395882565114.dkr.ecr.us-east-1.amazonaws.com/node-hello:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
