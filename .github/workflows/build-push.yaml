@@ -33,9 +33,9 @@ jobs:
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
-          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:latest"
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-          docker build -t "$IMAGE_URI" .
+          docker build -t "$IMAGE_URI" .            
           docker push "$IMAGE_URI"
 
       - name: Show image URI
