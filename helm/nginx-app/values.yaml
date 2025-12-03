@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: nginx        # will be overridden by Jenkins
+  tag: "stable"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+namespace: app-dev
