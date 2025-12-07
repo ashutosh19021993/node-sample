@@ -9,4 +9,3 @@ service:
   type: ClusterIP
   port: 80
 
-namespace: app-dev
