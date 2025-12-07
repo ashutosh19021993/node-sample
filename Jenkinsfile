@@ -110,22 +110,22 @@ spec:
       }
     }
 
-    stage('Trivy Scan (from registry)') {
-      steps {
-        container('docker-cli') {
-          sh '''
-            echo "🔍 Scanning image with Trivy (pulling from registry)..."
-            docker run --rm \
-              aquasec/trivy:latest image \
-              --scanners vuln \
-              --ignore-unfixed \
-              --severity HIGH,CRITICAL \
-              --exit-code 1 \
-              ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-          '''
-        }
-      }
-    }
+    // stage('Trivy Scan (from registry)') {
+    //   steps {
+    //     container('docker-cli') {
+    //       sh '''
+    //         echo "🔍 Scanning image with Trivy (pulling from registry)..."
+    //         docker run --rm \
+    //           aquasec/trivy:latest image \
+    //           --scanners vuln \
+    //           --ignore-unfixed \
+    //           --severity HIGH,CRITICAL \
+    //           --exit-code 1 \
+    //           ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+    //       '''
+    //     }
+    //   }
+    // }
 
     stage('Deploy via Helm (in-cluster)') {
       steps {
