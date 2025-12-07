@@ -1,7 +1,7 @@
 pipeline {
   agent {
-    kubernetes {
-      yaml """
+  kubernetes {
+    yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -9,18 +9,15 @@ metadata:
     app: jenkins-docker-agent
 spec:
   serviceAccountName: jenkins
+
   containers:
     - name: docker-cli
       image: docker:24-cli
-      command:
-        - cat
+      command: ["sh", "-c", "cat"]
       tty: true
       env:
         - name: DOCKER_HOST
           value: tcp://localhost:2375
-      volumeMounts:
-        - name: docker-graph-storage
-          mountPath: /var/lib/docker
 
     - name: dind
       image: docker:24-dind
@@ -28,22 +25,16 @@ spec:
         privileged: true
       env:
         - name: DOCKER_TLS_CERTDIR
-          value: ""
-      volumeMounts:
-        - name: docker-graph-storage
-          mountPath: /var/lib/docker
+          value: ""                  # ✅ disables TLS so 2375 works
+      args:
+        - "--host=tcp://0.0.0.0:2375"
+        - "--host=unix:///var/run/docker.sock"
 
-    - name: tools
-      image: dtzar/helm-kubectl:3.14.2 
-      command: ['cat']
-      tty: true
-
-  volumes:
-    - name: docker-graph-storage
-      emptyDir: {}
+  volumes: []
 """
-    }
   }
+}
+
 
   environment {
     REGISTRY        = "docker.io"
