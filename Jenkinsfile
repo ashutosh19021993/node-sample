@@ -34,9 +34,8 @@ spec:
           mountPath: /var/lib/docker
 
     - name: tools
-      image: lachlanevenson/k8s-helm:v3.7.2
-      command:
-        - cat
+      image: dtzar/helm-kubectl:3.14.2 
+      command: ['cat']
       tty: true
 
   volumes:
