@@ -8,17 +8,17 @@ spec:
     - list:
         elements:
           - appName: booking
-            path: apps/booking
+            path: argocd-multi/apps/booking
             namespace: booking
             server: https://app-cluster-control-plane:6443
 
           - appName: payments
-            path: apps/payments
+            path: argocd-multi/apps/payments
             namespace: payments
             server: https://app-cluster-control-plane:6443
 
           - appName: search
-            path: apps/search
+            path: argocd-multi/apps/search
             namespace: search
             server: https://kubernetes.default.svc
 
