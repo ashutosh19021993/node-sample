@@ -11,26 +11,40 @@ spec:
   serviceAccountName: jenkins
 
   containers:
-    - name: docker-cli
-      image: docker:24-cli
-      command: ["sh", "-c", "cat"]
-      tty: true
-      env:
-        - name: DOCKER_HOST
-          value: tcp://localhost:2375
-
     - name: dind
       image: docker:24-dind
       securityContext:
         privileged: true
       env:
         - name: DOCKER_TLS_CERTDIR
-          value: ""                  # ✅ disables TLS so 2375 works
-      args:
-        - "--host=tcp://0.0.0.0:2375"
-        - "--host=unix:///var/run/docker.sock"
+          value: ""                  # disable TLS
+      volumeMounts:
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+        - name: docker-sock
+          mountPath: /var/run        # this gives /var/run/docker.sock
 
-  volumes: []
+    - name: docker
+      image: docker:24-cli
+      command: ["sh", "-c", "cat"]
+      tty: true
+      env:
+        - name: DOCKER_HOST
+          value: unix:///var/run/docker.sock   # 👈 talk to the UNIX socket
+      volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run                  # same /var/run/docker.sock
+
+    - name: helm-kubectl
+      image: dtzar/helm-kubectl:3.14.2
+      command: ["sh", "-c", "cat"]
+      tty: true
+
+  volumes:
+    - name: docker-graph-storage
+      emptyDir: {}
+    - name: docker-sock
+      emptyDir: {}
 """
   }
 }
