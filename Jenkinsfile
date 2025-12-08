@@ -203,14 +203,17 @@ spec:
 """
     }
   }
+parameters {
+  choice(name: 'APP_NAME', choices: ['booking', 'payments', 'search'], description: 'Which app to build')
+}
 
   environment {
     REGISTRY          = "docker.io"
     DOCKERHUB_USER    = "ashutosh1993"
-    IMAGE_NAME        = "nginx-app"
+    IMAGE_NAME        = "${APP_NAME}"
     IMAGE_TAG         = "${env.BUILD_NUMBER}"
 
-    APP_NS            = "cluster1"
+    //APP_NS            = "cluster1"
     DOCKERHUB_CRED_ID = "dockerhub-creds"
 
     // NEW: git credentials for pushing back to SAME repo
