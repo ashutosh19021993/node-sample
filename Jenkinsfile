@@ -292,13 +292,13 @@ spec:
               echo "📝 Updating image tags in app values.yaml files..."
 
               # booking
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" apps/booking/values.yaml
+              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/booking/values.yaml
 
               # payments
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" apps/payments/values.yaml
+              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/payments/values.yaml
 
               # search
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" apps/search/values.yaml
+              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/search/values.yaml
 
               echo "📊 Git status after changes:"
               git status
@@ -306,7 +306,7 @@ spec:
               git config user.email "jenkins@example.com"
               git config user.name "Jenkins CI"
 
-              git add apps/booking/values.yaml apps/payments/values.yaml apps/search/values.yaml
+              git add argocd-multi/apps/booking/values.yaml argocd-multi/apps/payments/values.yaml argocd-multi/apps/search/values.yaml
 
               # If nothing changed, skip commit/push
               if git diff --cached --quiet; then
