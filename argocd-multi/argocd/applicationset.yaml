@@ -10,12 +10,12 @@ spec:
           - appName: booking
             path: apps/booking
             namespace: booking
-            server: https://cluster1-control-plane:6443
+            server: https://app-cluster-control-plane:6443
 
           - appName: payments
             path: apps/payments
             namespace: payments
-            server: https://cluster2-control-plane:6443
+            server: https://app-cluster-control-plane:6443
 
           - appName: search
             path: apps/search
@@ -28,7 +28,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/ashutosh19021993/argocd-multi.git
+        repoURL: https://github.com/ashutosh19021993/node-sample.git
         targetRevision: main
         path: '{{path}}'
         helm:
