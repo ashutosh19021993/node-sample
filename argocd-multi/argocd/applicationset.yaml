@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: multi-app-multi-cluster
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - appName: booking
+            path: apps/booking
+            namespace: booking
+            server: https://cluster1-control-plane:6443
+
+          - appName: payments
+            path: apps/payments
+            namespace: payments
+            server: https://cluster2-control-plane:6443
+
+          - appName: search
+            path: apps/search
+            namespace: search
+            server: https://kubernetes.default.svc
+
+  template:
+    metadata:
+      name: '{{appName}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/ashutosh19021993/argocd-multi.git
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          valueFiles:
+            - values.yaml
+
+      destination:
+        server: '{{server}}'
+        namespace: '{{namespace}}'
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

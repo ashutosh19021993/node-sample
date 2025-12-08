@@ -1,0 +1,9 @@
+image:
+  repository: docker.io/ashutosh1993/search
+  tag: "latest"
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 80
