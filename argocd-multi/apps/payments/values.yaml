@@ -1,6 +1,6 @@
 image:
   repository: docker.io/ashutosh1993/payments
-  tag: "5"
+  tag: "6"
 
 replicaCount: 2
 
