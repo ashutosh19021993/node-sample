@@ -1,7 +1,7 @@
 pipeline {
   agent {
-  kubernetes {
-    yaml """
+    kubernetes {
+      yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -17,23 +17,23 @@ spec:
         privileged: true
       env:
         - name: DOCKER_TLS_CERTDIR
-          value: ""                  # disable TLS
+          value: ""
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
         - name: docker-sock
-          mountPath: /var/run        # this gives /var/run/docker.sock
+          mountPath: /var/run
 
-    - name: docker
+    - name: docker-cli
       image: docker:24-cli
       command: ["sh", "-c", "cat"]
       tty: true
       env:
         - name: DOCKER_HOST
-          value: unix:///var/run/docker.sock   # 👈 talk to the UNIX socket
+          value: unix:///var/run/docker.sock
       volumeMounts:
         - name: docker-sock
-          mountPath: /var/run                  # same /var/run/docker.sock
+          mountPath: /var/run
 
     - name: helm-kubectl
       image: dtzar/helm-kubectl:3.14.2
@@ -46,9 +46,8 @@ spec:
     - name: docker-sock
       emptyDir: {}
 """
+    }
   }
-}
-
 
   environment {
     REGISTRY        = "docker.io"
@@ -57,9 +56,7 @@ spec:
     IMAGE_TAG       = "${env.BUILD_NUMBER}"
 
     APP_NS          = "cluster1"
-    KUBE_CONTEXT    = "kind-kind-app"   // kept for reference, but not used in-cluster
-
-    DOCKERHUB_CRED_ID = "dockerhub-creds"   // Jenkins credential ID
+    DOCKERHUB_CRED_ID = "dockerhub-creds"
   }
 
   stages {
@@ -70,12 +67,21 @@ spec:
       }
     }
 
-    stage('Check Docker') {
+    stage('Wait for Docker daemon') {
       steps {
         container('docker-cli') {
           sh '''
-            echo "🔍 docker version in Kubernetes agent:"
-            docker version
+            echo "⏳ Waiting for Docker daemon ..."
+            for i in $(seq 1 15); do
+              if docker info >/dev/null 2>&1; then
+                echo "✅ Docker daemon is up."
+                exit 0
+              fi
+              echo "… still starting, retry $i/15"
+              sleep 3
+            done
+            echo "❌ Docker daemon did not become ready in time."
+            exit 1
           '''
         }
       }
@@ -104,7 +110,7 @@ spec:
               echo "🔐 Logging into Docker Hub..."
               echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin ${REGISTRY}
 
-              echo "🚀 Pushing image to registry..."
+              echo "🚀 Pushing image..."
               docker push ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
 
               docker logout
@@ -114,26 +120,9 @@ spec:
       }
     }
 
-    // stage('Trivy Scan (from registry)') {
-    //   steps {
-    //     container('docker-cli') {
-    //       sh '''
-    //         echo "🔍 Scanning image with Trivy (pulling from registry)..."
-    //         docker run --rm \
-    //           aquasec/trivy:latest image \
-    //           --scanners vuln \
-    //           --ignore-unfixed \
-    //           --severity HIGH,CRITICAL \
-    //           --exit-code 1 \
-    //           ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-    //       '''
-    //     }
-    //   }
-    // }
-
-    stage('Deploy via Helm (in-cluster)') {
+    stage('Deploy via Helm to cluster1') {
       steps {
-        container('tools') {
+        container('helm-kubectl') {
           sh '''
             echo "⛵ Using in-cluster Kubernetes (service account of Jenkins)..."
 
@@ -156,10 +145,10 @@ spec:
 
   post {
     success {
-      echo "✅ Success: ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} built, pushed, scanned, and deployed via Helm."
+      echo "✅ ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} built, pushed, and deployed."
     }
     failure {
-      echo "❌ Pipeline failed – check build, push, Trivy, or Helm/kubectl steps."
+      echo "❌ Pipeline failed – check Docker/Helm stages."
     }
   }
 }
