@@ -323,7 +323,7 @@ parameters {
               ORIGIN_URL=$(git config --get remote.origin.url)
               AUTH_URL=$(echo "$ORIGIN_URL" | sed "s#https://#https://${GIT_USER}:${GIT_TOKEN}@#")
 
-              git push "$AUTH_URL" HEAD:main
+              git push "$AUTH_URL" HEAD:${env.BRANCH_NAME}`
             '''
           }
         }
