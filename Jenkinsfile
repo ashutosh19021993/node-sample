@@ -375,4 +375,4 @@ parameters {
       echo "❌ Pipeline failed – check Docker / Git / ArgoCD stages."
     }
   }
-}
+
