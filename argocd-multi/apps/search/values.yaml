@@ -1,6 +1,6 @@
 image:
   repository: docker.io/ashutosh1993/search
-  tag: "11"
+  tag: "1"
 
 replicaCount: 2
 
