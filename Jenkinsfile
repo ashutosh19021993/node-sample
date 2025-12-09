@@ -341,4 +341,38 @@ parameters {
     }
   }
 }
+// 🔁 NEW: Trigger ArgoCD sync for this app
+    stage('ArgoCD Sync') {
+      steps {
+        container('argocd-cli') {
+          sh '''
+            set -e
+            APP="${IMAGE_NAME}"
 
+            echo "🔐 Logging into ArgoCD at ${ARGOCD_SERVER}..."
+            argocd login ${ARGOCD_SERVER} \
+              --username ${ARGOCD_USER} \
+              --password ${ARGOCD_PASS} \
+              --insecure \
+              --grpc-web
+
+            echo "🔁 Syncing ArgoCD application: ${APP} ..."
+            argocd app sync "${APP}" --grpc-web
+
+            echo "⏱ Waiting for app ${APP} to become healthy..."
+            argocd app wait "${APP}" --health --timeout 300 --grpc-web
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} built, pushed, Git updated, and ArgoCD synced."
+    }
+    failure {
+      echo "❌ Pipeline failed – check Docker / Git / ArgoCD stages."
+    }
+  }
+}
