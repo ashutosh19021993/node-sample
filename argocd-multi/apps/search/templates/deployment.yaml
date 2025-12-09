@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: search
+  name: searchs
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: search
+      app: searchs
   template:
     metadata:
       labels:
-        app: search
+        app: searchs
     spec:
       containers:
-        - name: search
+        - name: searchs
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - containerPort: 80
