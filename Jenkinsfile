@@ -321,7 +321,7 @@ parameters {
 
               echo "🚀 Pushing changes back to SAME repo (origin)..."
               ORIGIN_URL=$(git config --get remote.origin.url)
-              //AUTH_URL=$(echo "$ORIGIN_URL" | sed "s#https://#https://${GIT_USER}:${GIT_TOKEN}@#")
+              #AUTH_URL=$(echo "$ORIGIN_URL" | sed "s#https://#https://${GIT_USER}:${GIT_TOKEN}@#")
               git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/argocd-multi.git
 
               git push origin HEAD:${BRANCH_NAME}
