@@ -295,7 +295,7 @@ parameters {
 
           echo "📝 Updating image tag in values.yaml for ${IMAGE_NAME}..."
 
-          VALUES_FILE="apps/${IMAGE_NAME}/values.yaml"
+          VALUES_FILE="argocd-multi/apps/${IMAGE_NAME}/values.yaml"
 
           # Update tag line
           sed -i "s|^\\s*tag:.*$|  tag: \\"${IMAGE_TAG}\\"|" "${VALUES_FILE}"
