@@ -282,54 +282,51 @@ parameters {
     }
 
     // 🔁 NEW: update values.yaml in this same repo so ArgoCD sees new tag
-    stage('Update Helm values & Push Git') {
-      steps {
-        // use the default jnlp container – it already has git
-        container('jnlp') {
-          withCredentials([usernamePassword(
-            credentialsId: GIT_CRED_ID,
-            usernameVariable: 'GIT_USER',
-            passwordVariable: 'GIT_TOKEN'
-          )]) {
-            sh '''
-              echo "📝 Updating image tags in app values.yaml files..."
+     stage('Update Helm values & Push Git') {
+  steps {
+    container('jnlp') {
+      withCredentials([usernamePassword(
+        credentialsId: GIT_CRED_ID,
+        usernameVariable: 'GIT_USER',
+        passwordVariable: 'GIT_TOKEN'
+      )]) {
+        sh '''
+          set -e
 
-              # booking
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/booking/values.yaml
+          echo "📝 Updating image tag in values.yaml for ${IMAGE_NAME}..."
 
-              # payments
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/payments/values.yaml
+          VALUES_FILE="apps/${IMAGE_NAME}/values.yaml"
 
-              # search
-              sed -i "s/^\\s*tag:.*/  tag: \\"${IMAGE_TAG}\\"/" argocd-multi/apps/search/values.yaml
+          # Update tag line
+          sed -i "s|^\\s*tag:.*$|  tag: \\"${IMAGE_TAG}\\"|" "${VALUES_FILE}"
 
-              echo "📊 Git status after changes:"
-              git status
+          echo "📊 Git status after change:"
+          git status
 
-              git config user.email "jenkins@example.com"
-              git config user.name "Jenkins CI"
+          git config user.email "jenkins@example.com"
+          git config user.name "Jenkins CI"
 
-              git add argocd-multi/apps/booking/values.yaml argocd-multi/apps/payments/values.yaml argocd-multi/apps/search/values.yaml
+          git add "${VALUES_FILE}"
 
-              # If nothing changed, skip commit/push
-              if git diff --cached --quiet; then
-                echo "ℹ️ No changes to commit (image tag already ${IMAGE_TAG})."
-                exit 0
-              fi
+          if git diff --cached --quiet; then
+            echo "ℹ️ No changes to commit."
+            exit 0
+          fi
 
-              git commit -m "Update image tag to ${IMAGE_TAG}"
+          git commit -m "Update ${IMAGE_NAME} image tag to ${IMAGE_TAG}"
 
-              echo "🚀 Pushing changes back to SAME repo (origin)..."
-              ORIGIN_URL=$(git config --get remote.origin.url)
-              #AUTH_URL=$(echo "$ORIGIN_URL" | sed "s#https://#https://${GIT_USER}:${GIT_TOKEN}@#")
-              git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/argocd-multi.git
+          echo "🚀 Pushing changes to branch: ${BRANCH_NAME}"
 
-              git push origin HEAD:${BRANCH_NAME}
-            '''
-          }
-        }
+          # 🔐 set remote URL with credentials (NO sed, NO backticks, NO //)
+          git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/node-sample.git"
+
+          git push origin HEAD:"${BRANCH_NAME}"
+        '''
       }
     }
+  }
+}
+
 
     // ❌ We REMOVE direct Helm deploy if ArgoCD is doing GitOps
     // stage('Deploy via Helm to cluster1') { ... }
