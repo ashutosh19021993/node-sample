@@ -227,7 +227,7 @@ spec:
     GIT_CRED_ID       = "github-creds"
 
     
-    ARGOCD_SERVER     = "http://localhost:8080"   // change
+    ARGOCD_SERVER     = "argocd-server.argocd.svc.cluster.local:443"   // change
     ARGOCD_CRED_ID    = "argocd-creds"         // username/password or token
   }
 
