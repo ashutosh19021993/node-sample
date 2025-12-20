@@ -151,7 +151,8 @@
 //       echo "❌ Pipeline failed – check Docker/Helm stages."
 //     }
 //   }
-// }
+
+
 
 pipeline {
   agent {
@@ -310,7 +311,11 @@ spec:
                 echo "ℹ️ No changes to commit."
                 exit 0
               fi
+
               # ✅ prevent Jenkins loop
+              git commit -m "[skip ci] Update ${IMAGE_NAME} image tag to ${IMAGE_TAG}"
+
+              echo "🚀 Pushing changes to branch: ${BRANCH_NAME}"
               git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/node-sample.git"
               git push origin HEAD:"${BRANCH_NAME}"
             '''
@@ -359,7 +364,4 @@ spec:
     }
   }
 }
-              git commit -m "[skip ci] Update ${IMAGE_NAME} image tag to ${IMAGE_TAG}"
-
-              echo "🚀 Pushing changes to branch: ${BRANCH_NAME}"
 
