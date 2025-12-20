@@ -198,7 +198,7 @@ spec:
 
     # ✅ ADD argocd-cli container because you use it
     - name: argocd-cli
-      image: argoproj/argocd:v2.10.7
+      image: quay.io/argoproj/argocd:v2.10.7
       command: ["sh", "-c", "cat"]
       tty: true
 
