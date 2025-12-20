@@ -346,7 +346,7 @@ spec:
                 --grpc-web
 
               echo "🔁 Syncing ArgoCD application: ${APP} ..."
-              argocd app sync "${APP}" --grpc-web
+              argocd app sync "${APP}" --revision "$BRANCH_NAME" --grpc-web
 
               echo "⏱ Waiting for app ${APP} to become healthy..."
               argocd app wait "${APP}" --health --timeout 300 --grpc-web
