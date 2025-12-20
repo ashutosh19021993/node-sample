@@ -201,6 +201,8 @@ spec:
       image: quay.io/argoproj/argocd:v2.10.7
       command: ["sh", "-c", "cat"]
       tty: true
+      securityContext:
+        runAsUser: 0
 
   volumes:
     - name: docker-graph-storage
