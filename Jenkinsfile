@@ -224,7 +224,7 @@ spec:
     DOCKERHUB_CRED_ID = "dockerhub-creds"
     GIT_CRED_ID       = "github-creds"
 
-    # ✅ set these as Jenkins credentials (recommended) or env vars
+    
     ARGOCD_SERVER     = "argocd.example.com"   // change
     ARGOCD_CRED_ID    = "argocd-creds"         // username/password or token
   }
