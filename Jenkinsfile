@@ -195,6 +195,12 @@ spec:
       command: ["sh", "-c", "cat"]
       tty: true
 
+    # ✅ ADD argocd-cli container because you use it
+    - name: argocd-cli
+      image: argoproj/argocd:v2.10.7
+      command: ["sh", "-c", "cat"]
+      tty: true
+
   volumes:
     - name: docker-graph-storage
       emptyDir: {}
@@ -203,9 +209,10 @@ spec:
 """
     }
   }
-parameters {
-  choice(name: 'APP_NAME', choices: ['booking', 'payments', 'search'], description: 'Which app to build')
-}
+
+  parameters {
+    choice(name: 'APP_NAME', choices: ['booking', 'payments', 'search'], description: 'Which app to build')
+  }
 
   environment {
     REGISTRY          = "docker.io"
@@ -213,19 +220,17 @@ parameters {
     IMAGE_NAME        = "${APP_NAME}"
     IMAGE_TAG         = "${env.BUILD_NUMBER}"
 
-    //APP_NS            = "cluster1"
     DOCKERHUB_CRED_ID = "dockerhub-creds"
-
-    // NEW: git credentials for pushing back to SAME repo
     GIT_CRED_ID       = "github-creds"
+
+    # ✅ set these as Jenkins credentials (recommended) or env vars
+    ARGOCD_SERVER     = "argocd.example.com"   // change
+    ARGOCD_CRED_ID    = "argocd-creds"         // username/password or token
   }
 
   stages {
-
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
     stage('Wait for Docker daemon') {
@@ -281,98 +286,80 @@ parameters {
       }
     }
 
-    // 🔁 NEW: update values.yaml in this same repo so ArgoCD sees new tag
-     stage('Update Helm values & Push Git') {
-  steps {
-    container('jnlp') {
-      withCredentials([usernamePassword(
-        credentialsId: GIT_CRED_ID,
-        usernameVariable: 'GIT_USER',
-        passwordVariable: 'GIT_TOKEN'
-      )]) {
-        sh '''
-          set -e
-
-          echo "📝 Updating image tag in values.yaml for ${IMAGE_NAME}..."
-
-          VALUES_FILE="argocd-multi/apps/${IMAGE_NAME}/values.yaml"
-
-          # Update tag line
-          sed -i "s|^\\s*tag:.*$|  tag: \\"${IMAGE_TAG}\\"|" "${VALUES_FILE}"
-
-          echo "📊 Git status after change:"
-          git status
-
-          git config user.email "jenkins@example.com"
-          git config user.name "Jenkins CI"
-
-          git add "${VALUES_FILE}"
-
-          if git diff --cached --quiet; then
-            echo "ℹ️ No changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Update ${IMAGE_NAME} image tag to ${IMAGE_TAG}"
-
-          echo "🚀 Pushing changes to branch: ${BRANCH_NAME}"
-
-          # 🔐 set remote URL with credentials (NO sed, NO backticks, NO //)
-          git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/node-sample.git"
-
-          git push origin HEAD:"${BRANCH_NAME}"
-        '''
-      }
-    }
-  }
-}
-
-
-    // ❌ We REMOVE direct Helm deploy if ArgoCD is doing GitOps
-    // stage('Deploy via Helm to cluster1') { ... }
-  }
-
-  post {
-    success {
-      echo "✅ ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} built, pushed, and Git updated for ArgoCD."
-    }
-    failure {
-      echo "❌ Pipeline failed – check Docker / Git stages."
-    }
-  }
-}
-// 🔁 NEW: Trigger ArgoCD sync for this app
-    stage('ArgoCD Sync') {
+    stage('Update Helm values & Push Git') {
       steps {
-        container('argocd-cli') {
-          sh '''
-            set -e
-            APP="${IMAGE_NAME}"
+        container('jnlp') {
+          withCredentials([usernamePassword(
+            credentialsId: GIT_CRED_ID,
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GIT_TOKEN'
+          )]) {
+            sh '''
+              set -e
+              VALUES_FILE="argocd-multi/apps/${IMAGE_NAME}/values.yaml"
 
-            echo "🔐 Logging into ArgoCD at ${ARGOCD_SERVER}..."
-            argocd login ${ARGOCD_SERVER} \
-              --username ${ARGOCD_USER} \
-              --password ${ARGOCD_PASS} \
-              --insecure \
-              --grpc-web
+              echo "📝 Updating image tag in ${VALUES_FILE}..."
+              sed -i "s|^\\s*tag:.*$|  tag: \\"${IMAGE_TAG}\\"|" "${VALUES_FILE}"
 
-            echo "🔁 Syncing ArgoCD application: ${APP} ..."
-            argocd app sync "${APP}" --grpc-web
+              git config user.email "jenkins@example.com"
+              git config user.name "Jenkins CI"
 
-            echo "⏱ Waiting for app ${APP} to become healthy..."
-            argocd app wait "${APP}" --health --timeout 300 --grpc-web
-          '''
+              git add "${VALUES_FILE}"
+
+              if git diff --cached --quiet; then
+                echo "ℹ️ No changes to commit."
+                exit 0
+              fi
+              # ✅ prevent Jenkins loop
+              git remote set-url origin "https://${GIT_USER}:${GIT_TOKEN}@github.com/ashutosh19021993/node-sample.git"
+              git push origin HEAD:"${BRANCH_NAME}"
+            '''
+          }
         }
       }
     }
-  
+
+    stage('ArgoCD Sync') {
+      steps {
+        container('argocd-cli') {
+          withCredentials([usernamePassword(
+            credentialsId: ARGOCD_CRED_ID,
+            usernameVariable: 'ARGOCD_USER',
+            passwordVariable: 'ARGOCD_PASS'
+          )]) {
+            sh '''
+              set -e
+              APP="${IMAGE_NAME}"
+
+              echo "🔐 Logging into ArgoCD at ${ARGOCD_SERVER}..."
+              argocd login "${ARGOCD_SERVER}" \
+                --username "${ARGOCD_USER}" \
+                --password "${ARGOCD_PASS}" \
+                --insecure \
+                --grpc-web
+
+              echo "🔁 Syncing ArgoCD application: ${APP} ..."
+              argocd app sync "${APP}" --grpc-web
+
+              echo "⏱ Waiting for app ${APP} to become healthy..."
+              argocd app wait "${APP}" --health --timeout 300 --grpc-web
+            '''
+          }
+        }
+      }
+    }
+  }
 
   post {
     success {
-      echo "✅ ${REGISTRY}/${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} built, pushed, Git updated, and ArgoCD synced."
+      echo "✅ Built/pushed image, updated Git, and synced ArgoCD."
     }
     failure {
       echo "❌ Pipeline failed – check Docker / Git / ArgoCD stages."
     }
   }
+}
+              git commit -m "[skip ci] Update ${IMAGE_NAME} image tag to ${IMAGE_TAG}"
+
+              echo "🚀 Pushing changes to branch: ${BRANCH_NAME}"
 
