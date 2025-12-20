@@ -1,6 +1,6 @@
 image:
   repository: docker.io/ashutosh1993/booking
-  tag: "6"
+  tag: "13"
 
 replicaCount: 2
 
